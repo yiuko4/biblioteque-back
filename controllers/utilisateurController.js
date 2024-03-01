@@ -1,5 +1,5 @@
 import express from 'express';
-
+import nodemailer from 'nodemailer';
 const router = express.Router();
 
 const utilisateurController = (connection) => {
@@ -10,7 +10,7 @@ router.get('/creerUtilisateur', (req, res, next) => {
 
   // Vérifiez si les paramètres requis sont présents
   if (!nom || !prenom || !email || !motDePasse || !adresse || !ville ||!codePostal || !nbEmprunts) {
-      return res.status(400).json({ message: "Les paramètres nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts est requis." });
+      return res.status(400).json({ message: "Les paramètres nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts sont requis." });
   }
 
   const query = 'INSERT INTO Utilisateurs (utilisateurId, nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, Retard) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0);';
@@ -61,6 +61,34 @@ router.get('/recupInfoUtilisateur', (req, res, next) => {
   });
 });
 
+// Endpoint pour l'envoi d'e-mails
+router.get('/sendEmail', (req, res) => {
+
+  const transporter = nodemailer.createTransport({
+    service: 'Outlook',
+    auth: {
+      user: 'lulu.gerome@outlook.fr',
+      pass: 'Azerqsdf1234.',
+    },
+  });
+
+  const mailOptions = {
+    from: 'lulu.gerome@outlook.fr',
+    to: 'lulu.gerome@outlook.fr',
+    subject: 'Retour de votre emprunt',
+    text: 'Votre emprunt date de 30 jours, il vous reste donc encore 30 jours avant de devoir le rendre'
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'e-mail' });
+    } else {
+      console.log('E-mail envoyé: ' + info.response);
+      res.status(200).json({ success: 'E-mail envoyé avec succès' });
+    }
+  });
+});
 
   return router;
 };

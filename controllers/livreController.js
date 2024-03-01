@@ -88,7 +88,7 @@ router.get('/recupInfoLivre', (req, res, next) => {
       return res.status(400).json({ message: "Le paramètre 'livreId' est requis." });
   }
 
-  const query = 'SELECT * FROM Livres WHERE livreId = ?';
+  const query = 'SELECT * FROM Livres L INNER JOIN Emprunts E ON L.livreId = E.livreId WHERE L.livreId = ?;';
   const values = [livreId];
 
   connection.query(query, values, (err, results) => {
@@ -102,15 +102,15 @@ router.get('/recupInfoLivre', (req, res, next) => {
 
 // Endpoint pour l'emprunt d'un livre
 router.get('/empruntLivre', (req, res, next) => {
-  const { livreId } = req.query;
+  const { utilisateurId, livreId } = req.query;
 
   // Vérifiez si les paramètres requis sont présents
-  if (!livreId) {
-      return res.status(400).json({ message: "Le paramètre 'livreId' est requis." });
+  if (!utilisateurId || !livreId) {
+      return res.status(400).json({ message: "Le paramètre livreId et utilisateurId sont requis." });
   }
 
-  const query = 'INSERT INTO Emprunts (empruntId, utilisateurId, livreId, dateEmprunt, dateRetourPrevue, dateRetourEffectif, etatLivre) VALUES (NULL, ?, ?, ?, ?, NULL, Null);';
-  const values = [livreId];
+  const query = 'INSERT INTO Emprunts (empruntId, utilisateurId, livreId, dateEmprunt, dateRetourPrevue, dateRetourEffectif, etatLivre) VALUES (NULL, ?, ?, NOW(), DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY), NULL, Null);';
+  const values = [utilisateurId, livreId];
 
   connection.query(query, values, (err, results) => {
       if (err) {
@@ -121,6 +121,26 @@ router.get('/empruntLivre', (req, res, next) => {
   });
 });
 
+// Endpoint pour l'emprunt d'un livre
+router.get('/supprimerLivre', (req, res, next) => {
+  const { livreId } = req.query;
+
+  // Vérifiez si les paramètres requis sont présents
+  if (!livreId) {
+      return res.status(400).json({ message: "Le paramètre 'livreId' est requis." });
+  }
+
+  const query = 'DELETE FROM Livres WHERE livreId = ?';
+  const values = [livreId];
+
+  connection.query(query, values, (err, results) => {
+      if (err) {
+          next(err); // Gérer les erreurs 
+      } else {
+          res.json(results);
+      }
+  });
+});
 
   return router;
 };

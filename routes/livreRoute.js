@@ -18,5 +18,7 @@ router.get('/nbEmpruntsUtilisateur', livreController(db));
 router.get('/recupInfoLivre', livreController(db));
 // Route pour récupérer les infos d'un livre par Id
 router.get('/empruntLivre', livreController(db));
+// Route pour supprimer un livre a partir d'un id
+router.get('/supprimerLivre', livreController(db));
 
 export default router;
