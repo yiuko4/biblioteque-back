@@ -8,10 +8,12 @@ import corsOptions from './config/configCors.js';
 const app = express();
 const port = 3000;
 
+// Configuration CORS appliquée à toutes les requêtes
+app.use(cors(corsOptions));
+
 // Routes
 app.use('/api/livres', livreRoutes);
 app.use('/api/utilisateurs', utilisateurRoutes);
-app.use(cors(corsOptions));
 
 app.listen(port, () => {
     console.log(`Serveur écoutant sur le port ${port}`);
