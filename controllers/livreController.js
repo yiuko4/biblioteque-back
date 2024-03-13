@@ -88,7 +88,7 @@ router.get('/recupInfoLivre', (req, res, next) => {
       return res.status(400).json({ message: "Le paramètre 'livreId' est requis." });
   }
 
-  const query = 'SELECT * FROM Livres L INNER JOIN Emprunts E ON L.livreId = E.livreId WHERE L.livreId = ?;';
+  const query = 'SELECT * FROM Livres WHERE livreId = ?;';
   const values = [livreId];
 
   connection.query(query, values, (err, results) => {
@@ -101,25 +101,39 @@ router.get('/recupInfoLivre', (req, res, next) => {
 });
 
 // Endpoint pour l'emprunt d'un livre
-router.get('/empruntLivre', (req, res, next) => {
-  const { utilisateurId, livreId } = req.query;
+    router.post('/empruntLivre', (req, res, next) => {
+        const { utilisateurId, livreId } = req.body;
 
-  // Vérifiez si les paramètres requis sont présents
-  if (!utilisateurId || !livreId) {
-      return res.status(400).json({ message: "Le paramètre livreId et utilisateurId sont requis." });
-  }
+        if (!utilisateurId || !livreId) {
+            return res.status(400).json({ message: "Les paramètres 'livreId' et 'utilisateurId' sont requis." });
+        }
 
-  const query = 'INSERT INTO Emprunts (empruntId, utilisateurId, livreId, dateEmprunt, dateRetourPrevue, dateRetourEffectif, etatLivre) VALUES (NULL, ?, ?, NOW(), DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY), NULL, Null);';
-  const values = [utilisateurId, livreId];
+        // Étape 1: Vérifier le nombre d'emprunts actuels de l'utilisateur
+        const checkQuery = 'SELECT COUNT(empruntId) AS nbEmprunts FROM Emprunts WHERE utilisateurId = ? AND dateRetourEffectif IS NULL';
+        connection.query(checkQuery, [utilisateurId], (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else {
+                // Vérifier si l'utilisateur a déjà 3 livres empruntés
+                if (results[0].nbEmprunts >= 3) {
+                    return res.status(400).json({ message: "L'utilisateur a déjà emprunté 3 livres." });
+                } else {
+                    // Étape 2: Insérer l'emprunt si l'utilisateur n'a pas atteint la limite
+                    const query = 'INSERT INTO Emprunts (utilisateurId, livreId, dateEmprunt, dateRetourPrevue) VALUES (?, ?, NOW(), DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY));';
+                    const values = [utilisateurId, livreId];
 
-  connection.query(query, values, (err, results) => {
-      if (err) {
-          next(err); // Gérer les erreurs 
-      } else {
-          res.json(results);
-      }
-  });
-});
+                    connection.query(query, values, (err, insertResults) => {
+                        if (err) {
+                            next(err); // Gérer les erreurs
+                        } else {
+                            res.json({ message: 'Emprunt enregistré avec succès', insertResults });
+                        }
+                    });
+                }
+            }
+        });
+    });
+
 
 // Endpoint pour l'emprunt d'un livre
 router.get('/supprimerLivre', (req, res, next) => {
@@ -142,7 +156,38 @@ router.get('/supprimerLivre', (req, res, next) => {
   });
 });
 
-  return router;
+
+// Endpoint pour rechercher un livre par titre
+    router.get('/rechercherLivres', (req, res, next) => {
+        const { titre } = req.query;
+
+        // Vérifiez si le paramètre de recherche (titre) est présent
+        if (!titre) {
+            return res.status(400).json({ message: "Le paramètre 'titre' est requis pour la recherche." });
+        }
+
+        // Utilisez le caractère joker '%' pour trouver des livres dont le titre contient la chaîne de recherche
+        const query = 'SELECT * FROM Livres WHERE titre LIKE ?;';
+        const values = [`%${titre}%`];
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else {
+                res.json(results); // Retournez les résultats de la recherche
+
+            }
+        });
+    });
+
+
+
+
+
+
+
+
+    return router;
 };
 
 export default livreController;

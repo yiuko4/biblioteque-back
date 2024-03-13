@@ -16,8 +16,13 @@ router.get('/recupListeLivres', livreController(db));
 router.get('/nbEmpruntsUtilisateur', livreController(db));
 // Route pour récupérer les infos d'un livre par Id
 router.get('/recupInfoLivre', livreController(db));
+// Route pour retourner un livre par Id
+
+// Route pour récupérer les infos d'un livre par son nom
+router.get('/rechercherLivres', livreController(db));
+
 // Route pour récupérer les infos d'un livre par Id
-router.get('/empruntLivre', livreController(db));
+router.post('/empruntLivre', livreController(db));
 // Route pour supprimer un livre a partir d'un id
 router.get('/supprimerLivre', livreController(db));
 

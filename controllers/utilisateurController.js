@@ -5,25 +5,23 @@ const router = express.Router();
 const utilisateurController = (connection) => {
 
 // Endpoint pour la création d'un utilisateur
-router.get('/creerUtilisateur', (req, res, next) => {
-  const { nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts } = req.query;
+    router.post('/creerUtilisateur', (req, res) => {
+        const { nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard } = req.body;
 
-  // Vérifiez si les paramètres requis sont présents
-  if (!nom || !prenom || !email || !motDePasse || !adresse || !ville ||!codePostal || !nbEmprunts) {
-      return res.status(400).json({ message: "Les paramètres nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts sont requis." });
-  }
 
-  const query = 'INSERT INTO Utilisateurs (utilisateurId, nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, Retard) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0);';
-  const values = [nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts];
+        const query = 'INSERT INTO Utilisateurs (nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0);';
+        const values = [nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard];
 
-  connection.query(query, values, (err, results) => {
-      if (err) {
-          next(err); // Gérer les erreurs 
-      } else {
-          res.json(results);
-      }
-  });
-});
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json({ message: "Erreur lors de la création de l'utilisateur." });
+            } else {
+                res.status(201).json({ message: "Utilisateur créé avec succès.", utilisateurId: results.insertId });
+            }
+        });
+    });
 
 
   // Endpoint pour récupérer tous les utilisateurs
@@ -61,6 +59,34 @@ router.get('/recupInfoUtilisateur', (req, res, next) => {
   });
 });
 
+    router.get('/recupInfoUtilisateur/:utilisateurId/emprunts', (req, res, next) => {
+        const { utilisateurId } = req.params; // Utilisation de req.params pour une route paramétrée
+
+        if (!utilisateurId) {
+            return res.status(400).json({ message: "Le paramètre 'utilisateurId' est requis." });
+        }
+
+        // Requête pour récupérer les emprunts d'un utilisateur
+        // Cette requête suppose l'existence d'une table `Emprunts` avec une colonne `utilisateurId`,
+        // et une table `Livres` avec une colonne `livreId`.
+        const query = `
+    SELECT E.empruntId, E.dateEmprunt, E.dateRetourPrevue, E.dateRetourEffectif, L.titre, L.emplacement
+    FROM Emprunts E
+    JOIN Livres L ON E.livreId = L.livreId
+    WHERE E.utilisateurId = ?;
+  `;
+        const values = [utilisateurId];
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else {
+                res.json(results); // Retourne les emprunts de l'utilisateur avec les informations des livres
+            }
+        });
+    });
+
+
 // Endpoint pour l'envoi d'e-mails
 router.get('/sendEmail', (req, res) => {
 
@@ -89,6 +115,51 @@ router.get('/sendEmail', (req, res) => {
     }
   });
 });
+
+
+
+// Endpoint pour récupérer un utilisateur par son nom
+    router.get('/rechercherUtilisateurParNom', (req, res, next) => {
+        const { nom } = req.query; // 'nom' est le paramètre passé dans la requête
+
+        // Vérifiez si le paramètre 'nom' est présent
+        if (!nom) {
+            return res.status(400).json({ message: "Le paramètre 'nom' est requis pour la recherche." });
+        }
+
+        // Utilisez le caractère joker '%' pour trouver des utilisateurs dont le nom contient la chaîne de recherche
+        const query = 'SELECT * FROM Utilisateurs WHERE nom LIKE ?;';
+        const values = [`%${nom}%`]; // Assurez-vous que la base de données peut interpréter le joker '%'
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                return next(err); // Gérer les erreurs
+            } else {
+                res.json(results); // Retourne les résultats de la recherche
+            }
+        });
+    });
+
+
+
+    router.post('/retournerLivre', (req, res, next) => {
+        const { empruntId } = req.body;
+
+        if (!empruntId) {
+            return res.status(400).json({ message: "Le paramètre 'empruntId' est requis." });
+        }
+
+        const query = 'DELETE FROM Emprunts WHERE empruntId = ?';
+        connection.query(query, [empruntId], (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else if (results.affectedRows > 0) {
+                res.json({ message: 'Le livre a été retourné et l\'emprunt supprimé avec succès.' });
+            } else {
+                res.status(404).json({ message: 'Emprunt non trouvé.' });
+            }
+        });
+    });
 
   return router;
 };

@@ -10,7 +10,7 @@ const port = 3000;
 
 // Configuration CORS appliquée à toutes les requêtes
 app.use(cors(corsOptions));
-
+app.use(express.json());
 // Routes
 app.use('/api/livres', livreRoutes);
 app.use('/api/utilisateurs', utilisateurRoutes);
