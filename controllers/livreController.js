@@ -37,6 +37,28 @@ const livreController = (connection) => {
     });
 });
 
+// Endpoint pour la recherche d'un auteur
+router.get('/rechercherAuteur', (req, res, next) => {
+    const { nom, prenom } = req.query;
+
+    // Vérifiez si les paramètres requis (nom et prenom) sont présents
+    if (!nom || !prenom) {
+        return res.status(400).json({ message: "Les paramètres 'nom' et 'prenom' sont requis." });
+    }
+
+    const query = `select * FROM Auteurs WHERE nom = ? AND prenom = ?;`;
+    const values = [nom, prenom];
+
+    connection.query(query, values, (err, results) => {
+        if (err) {
+            next(err); // Gérer les erreurs 
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+
 // Endpoint pour la création d'une catégorie
 router.get('/creerCategorie', (req, res, next) => {
   const { nom } = req.query;
@@ -56,6 +78,27 @@ router.get('/creerCategorie', (req, res, next) => {
           res.json(results);
       }
   });
+});
+
+// Endpoint pour la recherche d'une catégorie
+router.get('/rechercherCategorie', (req, res, next) => {
+    const { nom } = req.query;
+
+    // Vérifiez si les paramètres requis (nom et prenom) sont présents
+    if (!nom) {
+        return res.status(400).json({ message: "Les paramètres 'nom' sont requis." });
+    }
+
+    const query = `select * FROM Categories WHERE nom = ?;`;
+    const values = [nom];
+
+    connection.query(query, values, (err, results) => {
+        if (err) {
+            next(err); // Gérer les erreurs 
+        } else {
+            res.json(results);
+        }
+    });
 });
 
 // Endpoint pour la création d'un livre
@@ -169,6 +212,53 @@ router.get('/supprimerLivre', (req, res, next) => {
         // Utilisez le caractère joker '%' pour trouver des livres dont le titre contient la chaîne de recherche
         const query = 'SELECT * FROM Livres WHERE titre LIKE ?;';
         const values = [`%${titre}%`];
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else {
+                res.json(results); // Retournez les résultats de la recherche
+
+            }
+        });
+    });
+
+    // Endpoint pour rechercher un livre par titre
+    router.get('/rechercherEmprunt', (req, res, next) => {
+        const { utilisateurId, livreId } = req.query;
+
+        // Vérifiez si le paramètre de recherche (titre) est présent
+        if (!utilisateurId || !livreId) {
+            return res.status(400).json({ message: "Les paramètres 'utilisateurId', 'livreId' sont requis pour la recherche." });
+        }
+
+        // Utilisez le caractère joker '%' pour trouver des livres dont le titre contient la chaîne de recherche
+        const query = 'SELECT * FROM Emprunts WHERE utilisateurId = ? AND livreId = ?;';
+        const values = [utilisateurId, livreId];
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+                next(err); // Gérer les erreurs
+            } else {
+                res.json(results); // Retournez les résultats de la recherche
+
+            }
+        });
+    });
+
+
+    // Endpoint pour rechercher un livre pour les tests
+    router.get('/rechercherLivreTests', (req, res, next) => {
+        const { auteurId, categorieId, titre, emplacement } = req.query;
+
+        // Vérifiez si le paramètre de recherche (titre) est présent
+        if (!titre) {
+            return res.status(400).json({ message: "Le paramètre 'titre' est requis pour la recherche." });
+        }
+
+        // Utilisez le caractère joker '%' pour trouver des livres dont le titre contient la chaîne de recherche
+        const query = 'SELECT * FROM Livres WHERE auteurId= ? AND categorieId = ? AND titre = ? AND emplacement = ?;';
+        const values = [auteurId, categorieId, titre, emplacement];
 
         connection.query(query, values, (err, results) => {
             if (err) {

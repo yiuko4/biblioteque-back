@@ -5,23 +5,35 @@ const router = express.Router();
 const utilisateurController = (connection) => {
 
 // Endpoint pour la création d'un utilisateur
-    router.post('/creerUtilisateur', (req, res) => {
-        const { nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard } = req.body;
+router.post('/creerUtilisateur', (req, res) => {
+  const { nom, prenom, email, motDePasse, adresse, ville, codePostal } = req.body;
 
+  // Vérifier d'abord si l'email existe déjà
+  const checkQuery = 'SELECT * FROM Utilisateurs WHERE email = ?';
+  connection.query(checkQuery, [email], (checkErr, checkResults) => {
+      if (checkErr) {
+          console.error(checkErr);
+          res.status(500).json({ message: "Erreur lors de la recherche de l'email." });
+      } else if (checkResults.length > 0) {
+          // Si l'email existe déjà, renvoyer un message d'erreur
+          res.status(400).json({ message: "Ces identifiants sont déjà utilisé." });
+      } else {
+          // Si l'email n'existe pas encore, insérer le nouvel utilisateur
+          const insertQuery = 'INSERT INTO Utilisateurs (nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0);';
+          const values = [nom, prenom, email, motDePasse, adresse, ville, codePostal];
 
-        const query = 'INSERT INTO Utilisateurs (nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0);';
-        const values = [nom, prenom, email, motDePasse, adresse, ville, codePostal, nbEmprunts, nbRetard];
+          connection.query(insertQuery, values, (insertErr, results) => {
+              if (insertErr) {
+                  console.error(insertErr);
+                  res.status(500).json({ message: "Erreur lors de la création de l'utilisateur." });
+              } else {
+                  res.status(201).json({ message: "Utilisateur créé avec succès.", utilisateurId: results.insertId });
+              }
+          });
+      }
+  });
+});
 
-
-        connection.query(query, values, (err, results) => {
-            if (err) {
-                console.error(err);
-                res.status(500).json({ message: "Erreur lors de la création de l'utilisateur." });
-            } else {
-                res.status(201).json({ message: "Utilisateur créé avec succès.", utilisateurId: results.insertId });
-            }
-        });
-    });
 
 
   // Endpoint pour récupérer tous les utilisateurs
@@ -140,28 +152,35 @@ router.get('/sendEmail', (req, res) => {
         });
     });
 
+  router.post('/retournerLivre', (req, res, next) => {
+    const { empruntId } = req.body;
 
+    if (!empruntId) {
+        return res.status(400).json({ message: "Le paramètre 'empruntId' est requis." });
+    }
 
-    router.post('/retournerLivre', (req, res, next) => {
-        const { empruntId } = req.body;
-
-        if (!empruntId) {
-            return res.status(400).json({ message: "Le paramètre 'empruntId' est requis." });
+    // Vérifier d'abord si l'emprunt existe
+    const checkQuery = 'SELECT * FROM Emprunts WHERE empruntId = ?';
+    connection.query(checkQuery, [empruntId], (checkErr, checkResults) => {
+        if (checkErr) {
+            next(checkErr); // Gérer les erreurs
+        } else if (checkResults.length === 0) {
+            res.status(404).json({ message: 'Emprunt non trouvé.' });
+        } else {
+            // Si l'emprunt existe, le supprimer de la base de données
+            const deleteQuery = 'DELETE FROM Emprunts WHERE empruntId = ?';
+            connection.query(deleteQuery, [empruntId], (deleteErr, deleteResults) => {
+                if (deleteErr) {
+                    next(deleteErr); // Gérer les erreurs
+                } else {
+                    res.json({ message: 'Le livre a été retourné et l\'emprunt supprimé avec succès.' });
+                }
+            });
         }
-
-        const query = 'DELETE FROM Emprunts WHERE empruntId = ?';
-        connection.query(query, [empruntId], (err, results) => {
-            if (err) {
-                next(err); // Gérer les erreurs
-            } else if (results.affectedRows > 0) {
-                res.json({ message: 'Le livre a été retourné et l\'emprunt supprimé avec succès.' });
-            } else {
-                res.status(404).json({ message: 'Emprunt non trouvé.' });
-            }
-        });
     });
+});
 
-  return router;
+return router;
 };
 
 export default utilisateurController;
