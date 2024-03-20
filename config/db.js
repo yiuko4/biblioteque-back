@@ -9,12 +9,12 @@ const db = mysql.createConnection({
 });
 
 // Connexion à la base de données
-db.connect((err) => {
-    if (err) {
-        console.error('Erreur de connexion à la base de données :', err);
-    } else {
-        console.log('Connexion à la base de données établie');
-    }
-});
+//db.connect((err) => {
+  //  if (err) {
+    //    console.error('Erreur de connexion à la base de données :', err);
+   // } else {
+     //   console.log('Connexion à la base de données établie');
+   // }
+//});
 
 export default db;

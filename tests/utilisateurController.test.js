@@ -28,10 +28,10 @@ describe('Utilisateur Controller', () => {
        .send(userData)
        .end((err, res) => {
         if (res.body.message === "Ces identifiants sont déjà utilisé.") {
-           // Si la propriété "message" est "Emprunt non trouvé", alors l'emprunt n'a pas été trouvé (404)
+           // Si la propriété "message" est "Ces identifiants sont déjà utilisé.", alors l'emprunt n'a pas été trouvé (400)
            expect(res).to.have.status(400);
         } else {
-          // Si la propriété "message" est différente de "Emprunt non trouvé", alors l'emprunt a été supprimé (200)
+          // Si la propriété "message" est différente de "Ces identifiants sont déjà utilisé.", alors l'emprunt a été supprimé (201)
           expect(res).to.have.status(201);
          }
 
