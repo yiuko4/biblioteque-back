@@ -136,7 +136,7 @@ describe('Livre Controller', () => {
         expect(res).to.have.status(200);
         expect(res.body[0]).to.have.property("titre").equal('Dune'); 
         expect(res.body[0]).to.have.property("emplacement").equal('Étagère B2');
-        
+
         done();
       });
       
