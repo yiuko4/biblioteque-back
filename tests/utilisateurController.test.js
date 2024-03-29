@@ -45,6 +45,8 @@ describe('Utilisateur Controller', () => {
         .get('/api/utilisateurs/recupUtilisateurs')
         .end((err, res) => {
           expect(res).to.have.status(200);
+          expect(res.body[0]).to.have.property("prenom").equal('Marie'); 
+          expect(res.body[0]).to.have.property("email").equal('marie@gmail.com'); 
 
           done();
         });
@@ -56,7 +58,9 @@ describe('Utilisateur Controller', () => {
         .get('/api/utilisateurs/recupInfoUtilisateur?utilisateurId=4')
         .end((err, res) => {
           expect(res).to.have.status(200);
-
+          expect(res.body[0]).to.have.property("prenom").equal('Jean'); 
+          expect(res.body[0]).to.have.property("ville").equal('Nevers'); 
+          expect(res.body[0]).to.have.property("codePostal").equal('58000'); 
           done();
         });
         
